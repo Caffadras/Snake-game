@@ -57,13 +57,14 @@ public class GamePanel extends JPanel implements ActionListener{
 		
 		//drawing snake
 		if (bodyParts > 0) {
-			g.setColor(Color.yellow);
-			g.fillRect(x[0], y[0], UNIT_SIZE, UNIT_SIZE);
-	
+			//body
 			g.setColor(Color.green);
 			for(int i =1; i<bodyParts; ++i) {
 				g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
 			}
+			//head
+			g.setColor(Color.yellow);
+			g.fillRect(x[0], y[0], UNIT_SIZE, UNIT_SIZE);
 		}
 	}
 	/**
@@ -101,17 +102,41 @@ public class GamePanel extends JPanel implements ActionListener{
 		
 	}
 	
+	/**
+	 * This method is called every tick. It is responsible for checking the collisions of the snake.
+	 * First, it iterates from the first element (after the head) and checks, if head has collided with the body.
+	 * Second, it checks if head has collided with any of four walls. 
+	 * If it does, gameOver() method is called. 
+	 */
 	public void checkCollisions() {
+		//head collision with body
+		for(int i=1; i<bodyParts; ++i) {
+			if (x[0] == x[i] && y[0] == y[i]) {
+				gameOver();
+			}
+		}
+		//head collision with walls
+		//left wall
+		if (x[0] < 0) 	gameOver();
 		
+		//right wall
+		else if (x[0] > SCREEN_WIDTH - UNIT_SIZE) gameOver();
+		
+		//upper wall
+		else if (y[0] < 0) gameOver();
+		
+		//bottom wall
+		else if (y[0] > SCREEN_HEIGHT - UNIT_SIZE) gameOver();
 	}
 	
 	public void gameOver() {
-		
+		running = false;
 	}
 	@Override 
 	public void actionPerformed(ActionEvent e) {
 		if (running) {
 			move();
+			checkCollisions();
 		}
 		repaint();
 	}
