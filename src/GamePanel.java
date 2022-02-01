@@ -8,7 +8,32 @@ import java.awt.event.KeyAdapter;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-enum Directions {UP, DOWN, LEFT, RIGHT}
+enum Directions {UP, DOWN, LEFT, RIGHT;
+	Directions(){ }
+	
+	static Directions getDirectionFrom(KeyEvent e){
+		switch(e.getKeyCode()) {
+		case KeyEvent.VK_LEFT: return Directions.LEFT;
+		case KeyEvent.VK_RIGHT: return Directions.RIGHT;
+		case KeyEvent.VK_DOWN: return Directions.DOWN;
+		case KeyEvent.VK_UP: return Directions.UP;
+		}
+		return null;
+	}
+	static Directions getOpposite(Directions direction) {
+		switch(direction) {
+		case LEFT: return RIGHT;
+		case RIGHT: return LEFT;
+		case DOWN: return UP;
+		case UP: return DOWN;
+		}
+		return null;
+	}
+
+	boolean isAdjacent(Directions otherDirection) {
+		return this != otherDirection && getOpposite(otherDirection) != this;
+	}
+}
 
 public class GamePanel extends JPanel implements ActionListener{
 	private static final int SCREEN_WIDTH = 600;
@@ -19,6 +44,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	
 	private Directions direction;	//current direction of the snake
 	private Directions nextDirection; //next direction of the snake, which will be applied on the next tick
+	private boolean canTurn;  //if a player can turn in the current tick
 	
 	private final int x[] = new int[GAME_UNITS]; //x coordinates of every "block" of the snake.
 	private final int y[] = new int[GAME_UNITS]; //y coordinates of every "block" of the snake.
@@ -39,6 +65,7 @@ public class GamePanel extends JPanel implements ActionListener{
 		running = true; 
 		direction = Directions.RIGHT;
 		nextDirection = direction;
+		canTurn = true;
 		timer = new Timer(TIMER_DELAY, this);
 		timer.start();
 	}
@@ -77,7 +104,9 @@ public class GamePanel extends JPanel implements ActionListener{
 	 * Head movement depends on direction, so we check it and only then move head.
 	 */
 	public void move() {
-		direction = nextDirection;
+		if (canTurn ) direction = nextDirection; //if a player has made a 'sharp turn' (see isSharpTurn() method)
+												 //than the direction for this tick was already set in keyPressed method.
+		canTurn = true;	 
 		//moving body
 		for(int i=bodyParts -1; i>0; --i) {
 			x[i] = x[i-1];
@@ -149,25 +178,32 @@ public class GamePanel extends JPanel implements ActionListener{
 		
 		@Override
 		public void keyPressed(KeyEvent e) {
-			switch(e.getKeyCode()) {
-			case KeyEvent.VK_LEFT:
-				if (direction != Directions.RIGHT) nextDirection = Directions.LEFT;
-				break;
-			case KeyEvent.VK_RIGHT:
-				if (direction != Directions.LEFT) nextDirection = Directions.RIGHT;
-				break;
-			case KeyEvent.VK_DOWN:
-				if (direction != Directions.UP) nextDirection = Directions.DOWN;
-				break;
-			case KeyEvent.VK_UP:
-				if (direction != Directions.DOWN) nextDirection = Directions.UP;
-				break;
-		
+			Directions desiredDirection = Directions.getDirectionFrom(e);
+			if (desiredDirection == null) return;
+			
+			//see isSharpTurn() method
+			if (isSharpTurn(desiredDirection)) {
+				canTurn = false;
+				direction = nextDirection; 
+				nextDirection = desiredDirection;
+			}
+			else {		
+				//we change out next direction only when player doesn't make 180 degree turn
+				nextDirection = desiredDirection.isAdjacent(direction) ? desiredDirection : nextDirection;
 			}
 		}
 	}
 	
-	
+	/**
+	 * When a player needs to change direction 2 times very quickly - it registers as a 'sharp turn'.
+	 * In that case the player might change direction 2 times in one tick, which is not allowed. 
+	 * This method detects, if it is this case and if the order of directions is not illegal.
+	 * @param desiredDirection direction, which player pressed to go.
+	 * @return true, if current direction, next direction and desired location have legal order. E.g RIGHT, UP, RIGHT - is valid, but RIGHT, UP, DOWN - is not
+	 */
+	public boolean isSharpTurn(Directions desiredDirection) {
+		return direction.isAdjacent(nextDirection) && nextDirection.isAdjacent(desiredDirection);
+	}
 }
 
 
