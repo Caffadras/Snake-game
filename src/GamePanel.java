@@ -17,7 +17,9 @@ public class GamePanel extends JPanel implements ActionListener{
 	private static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT)/UNIT_SIZE;
 	private static final int TIMER_DELAY = 75; 
 	
-	private Directions direction; 
+	private Directions direction;	//current direction of the snake
+	private Directions nextDirection; //next direction of the snake, which will be applied on the next tick
+	
 	private final int x[] = new int[GAME_UNITS]; //x coordinates of every "block" of the snake.
 	private final int y[] = new int[GAME_UNITS]; //y coordinates of every "block" of the snake.
 	private int bodyParts = 6;                   //current amount of "blocks" in the snake.
@@ -36,6 +38,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	public void startGame() {
 		running = true; 
 		direction = Directions.RIGHT;
+		nextDirection = direction;
 		timer = new Timer(TIMER_DELAY, this);
 		timer.start();
 	}
@@ -60,11 +63,11 @@ public class GamePanel extends JPanel implements ActionListener{
 			//body
 			g.setColor(Color.green);
 			for(int i =1; i<bodyParts; ++i) {
-				g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+				g.fillRect(x[i]+1, y[i]+1, UNIT_SIZE-2, UNIT_SIZE-2);
 			}
 			//head
 			g.setColor(Color.yellow);
-			g.fillRect(x[0], y[0], UNIT_SIZE, UNIT_SIZE);
+			g.fillRect(x[0]+1, y[0]+1, UNIT_SIZE-2, UNIT_SIZE-2);
 		}
 	}
 	/**
@@ -74,6 +77,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	 * Head movement depends on direction, so we check it and only then move head.
 	 */
 	public void move() {
+		direction = nextDirection;
 		//moving body
 		for(int i=bodyParts -1; i>0; --i) {
 			x[i] = x[i-1];
@@ -147,16 +151,16 @@ public class GamePanel extends JPanel implements ActionListener{
 		public void keyPressed(KeyEvent e) {
 			switch(e.getKeyCode()) {
 			case KeyEvent.VK_LEFT:
-				if (direction != Directions.RIGHT) direction = Directions.LEFT;
+				if (direction != Directions.RIGHT) nextDirection = Directions.LEFT;
 				break;
 			case KeyEvent.VK_RIGHT:
-				if (direction != Directions.LEFT) direction = Directions.RIGHT;
+				if (direction != Directions.LEFT) nextDirection = Directions.RIGHT;
 				break;
 			case KeyEvent.VK_DOWN:
-				if (direction != Directions.UP) direction = Directions.DOWN;
+				if (direction != Directions.UP) nextDirection = Directions.DOWN;
 				break;
 			case KeyEvent.VK_UP:
-				if (direction != Directions.DOWN) direction = Directions.UP;
+				if (direction != Directions.DOWN) nextDirection = Directions.UP;
 				break;
 		
 			}
