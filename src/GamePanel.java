@@ -7,6 +7,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import java.util.Random;
 
 enum Directions {UP, DOWN, LEFT, RIGHT;
 	Directions(){ }
@@ -38,7 +39,7 @@ enum Directions {UP, DOWN, LEFT, RIGHT;
 public class GamePanel extends JPanel implements ActionListener{
 	private static final int SCREEN_WIDTH = 600;
 	private static final int SCREEN_HEIGHT = 600;
-	private static final int UNIT_SIZE = 25;
+	private static final int UNIT_SIZE = 50;
 	private static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT)/UNIT_SIZE;
 	private static final int TIMER_DELAY = 75; 
 	
@@ -50,10 +51,16 @@ public class GamePanel extends JPanel implements ActionListener{
 	private final int y[] = new int[GAME_UNITS]; //y coordinates of every "block" of the snake.
 	private int bodyParts = 6;                   //current amount of "blocks" in the snake.
 	
+	private Random rand = new Random();
+	private int appleX;
+	private int appleY;
+	private int applesEaten;
+	
 	private boolean running = false;
-	Timer timer;
+	private Timer timer;
 	
 	public GamePanel() {
+		rand = new Random();
 		this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
 		this.setBackground(Color.black);
 		this.setFocusable(true);
@@ -66,6 +73,8 @@ public class GamePanel extends JPanel implements ActionListener{
 		direction = Directions.RIGHT;
 		nextDirection = direction;
 		canTurn = true;
+		applesEaten = 0;
+		generateApple();
 		timer = new Timer(TIMER_DELAY, this);
 		timer.start();
 	}
@@ -90,12 +99,16 @@ public class GamePanel extends JPanel implements ActionListener{
 			//body
 			g.setColor(Color.green);
 			for(int i =1; i<bodyParts; ++i) {
-				g.fillRect(x[i]+1, y[i]+1, UNIT_SIZE-2, UNIT_SIZE-2);
+				g.fillRect(x[i]+1, y[i]+1, UNIT_SIZE-2, UNIT_SIZE-2); //we subtract 1 and 2 to make margins in the snake 
 			}
 			//head
 			g.setColor(Color.yellow);
 			g.fillRect(x[0]+1, y[0]+1, UNIT_SIZE-2, UNIT_SIZE-2);
 		}
+		
+		//drawing apple
+		g.setColor(Color.red);
+		g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
 	}
 	/**
 	 * This method is called every tick. It is responsible for moving the snake on the grid.
@@ -104,9 +117,11 @@ public class GamePanel extends JPanel implements ActionListener{
 	 * Head movement depends on direction, so we check it and only then move head.
 	 */
 	public void move() {
-		if (canTurn ) direction = nextDirection; //if a player has made a 'sharp turn' (see isSharpTurn() method)
-												 //than the direction for this tick was already set in keyPressed method.
+		//if a player cannot turn, i.e. has made a 'sharp turn' (see isSharpTurn() method),
+		//than the direction for this tick was already set in keyPressed method.
+		if (canTurn ) direction = nextDirection; 
 		canTurn = true;	 
+		
 		//moving body
 		for(int i=bodyParts -1; i>0; --i) {
 			x[i] = x[i-1];
@@ -131,12 +146,36 @@ public class GamePanel extends JPanel implements ActionListener{
 		
 	}
 	
+	/**
+	 * This method is called every tick. It is responsible for checking the collisions of the snake with apples.
+	 * If a collision is detected, new apple is generated.
+	 */
 	public void checkApple() {
-		
+		if (appleX == x[0] && appleY == y[0]) {
+			++applesEaten;
+			++bodyParts;
+			generateApple();
+			repaint();
+		}
 	}
 	
+	public void generateApple() {
+		boolean intersects;
+		do {
+			intersects = false;
+			appleX = rand.nextInt(SCREEN_WIDTH / UNIT_SIZE) * UNIT_SIZE;
+			appleY = rand.nextInt(SCREEN_HEIGHT / UNIT_SIZE) * UNIT_SIZE;
+			for(int i=0; i<bodyParts; ++i) {
+				if (appleX == x[i] && appleY == y[i]) {
+					intersects = true;
+					break;
+				}
+					
+			}
+		} while (intersects); //apple coordinates will be regenerated, if apple has spawned inside the snake.
+	}
 	/**
-	 * This method is called every tick. It is responsible for checking the collisions of the snake.
+	 * This method is called every tick. It is responsible for checking the collisions of the snake with itself and with walls.
 	 * First, it iterates from the first element (after the head) and checks, if head has collided with the body.
 	 * Second, it checks if head has collided with any of four walls. 
 	 * If it does, gameOver() method is called. 
@@ -168,11 +207,13 @@ public class GamePanel extends JPanel implements ActionListener{
 	@Override 
 	public void actionPerformed(ActionEvent e) {
 		if (running) {
+			checkApple();
 			move();
 			checkCollisions();
 		}
 		repaint();
 	}
+	
 	
 	public class MyKeyAdapter extends KeyAdapter {
 		
