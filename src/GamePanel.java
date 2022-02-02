@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import java.util.Random;
@@ -41,7 +43,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	private static final int SCREEN_HEIGHT = 600;
 	private static final int UNIT_SIZE = 50;
 	private static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT)/UNIT_SIZE;
-	private static final int TIMER_DELAY = 75; 
+	private static final int TIMER_DELAY = 100; 
 	
 	private Directions direction;	//current direction of the snake
 	private Directions nextDirection; //next direction of the snake, which will be applied on the next tick
@@ -86,29 +88,38 @@ public class GamePanel extends JPanel implements ActionListener{
 	}
 	
 	public void draw(Graphics g) {
-		//drawing grid
-		for(int i =0; i<SCREEN_HEIGHT/UNIT_SIZE; ++i) {
-			g.drawLine(i*UNIT_SIZE, 0, i*UNIT_SIZE, SCREEN_HEIGHT);
-		}
-		for (int i =0; i<SCREEN_WIDTH/UNIT_SIZE; ++i) {
-			g.drawLine(0, i*UNIT_SIZE, SCREEN_WIDTH, i*UNIT_SIZE);
-		}
-		
-		//drawing snake
-		if (bodyParts > 0) {
-			//body
-			g.setColor(Color.green);
-			for(int i =1; i<bodyParts; ++i) {
-				g.fillRect(x[i]+1, y[i]+1, UNIT_SIZE-2, UNIT_SIZE-2); //we subtract 1 and 2 to make margins in the snake 
+		if(running) {
+			//drawing grid
+			for(int i =0; i<SCREEN_HEIGHT/UNIT_SIZE; ++i) {
+				g.drawLine(i*UNIT_SIZE, 0, i*UNIT_SIZE, SCREEN_HEIGHT);
 			}
-			//head
-			g.setColor(Color.yellow);
-			g.fillRect(x[0]+1, y[0]+1, UNIT_SIZE-2, UNIT_SIZE-2);
+			for (int i =0; i<SCREEN_WIDTH/UNIT_SIZE; ++i) {
+				g.drawLine(0, i*UNIT_SIZE, SCREEN_WIDTH, i*UNIT_SIZE);
+			}
+			
+			//drawing snake
+			if (bodyParts > 0) {
+				//body
+				g.setColor(Color.green);
+				for(int i =1; i<bodyParts; ++i) {
+					g.fillRect(x[i]+1, y[i]+1, UNIT_SIZE-2, UNIT_SIZE-2); //we subtract 1 and 2 to make margins in the snake 
+				}
+				//head
+				g.setColor(Color.yellow);
+				g.fillRect(x[0]+1, y[0]+1, UNIT_SIZE-2, UNIT_SIZE-2);
+			}
+			
+			//drawing apple
+			g.setColor(Color.red);
+			g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
 		}
-		
-		//drawing apple
-		g.setColor(Color.red);
-		g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+		else {
+			//game over screen
+			g.setColor(Color.red);
+			g.setFont(new Font("Ink Free", Font.BOLD, 75));
+			FontMetrics metrics = getFontMetrics(g.getFont());
+			g.drawString("Game Over", (SCREEN_WIDTH - metrics.stringWidth("GameOver"))/2, SCREEN_HEIGHT / 2);
+		}
 	}
 	/**
 	 * This method is called every tick. It is responsible for moving the snake on the grid.
