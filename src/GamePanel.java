@@ -42,7 +42,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	private static final int SCREEN_WIDTH = 600;
 	private static final int SCREEN_HEIGHT = 600;
 	private static final int UNIT_SIZE = 50;
-	private static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT)/UNIT_SIZE;
+	private static final int GAME_UNITS = (SCREEN_WIDTH/UNIT_SIZE * SCREEN_HEIGHT/UNIT_SIZE);
 	private static final int TIMER_DELAY = 100; 
 	
 	private Directions direction;	//current direction of the snake
@@ -90,10 +90,10 @@ public class GamePanel extends JPanel implements ActionListener{
 	public void draw(Graphics g) {
 		if(running) {
 			//drawing grid
-			for(int i =0; i<SCREEN_HEIGHT/UNIT_SIZE; ++i) {
+			for(int i =0; i<SCREEN_WIDTH/UNIT_SIZE; ++i) {
 				g.drawLine(i*UNIT_SIZE, 0, i*UNIT_SIZE, SCREEN_HEIGHT);
 			}
-			for (int i =0; i<SCREEN_WIDTH/UNIT_SIZE; ++i) {
+			for (int i =0; i<SCREEN_HEIGHT/UNIT_SIZE; ++i) {
 				g.drawLine(0, i*UNIT_SIZE, SCREEN_WIDTH, i*UNIT_SIZE);
 			}
 			
@@ -112,13 +112,32 @@ public class GamePanel extends JPanel implements ActionListener{
 			//drawing apple
 			g.setColor(Color.red);
 			g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+		
+			//drawing score
+			g.setColor(new Color(219, 134, 255));
+			g.setFont(new Font("Ink Free", Font.BOLD, 35));
+			FontMetrics metrics = getFontMetrics(g.getFont());
+			g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - metrics.stringWidth("Score: " + applesEaten)), g.getFont().getSize());
+
 		}
 		else {
-			//game over screen
-			g.setColor(Color.red);
+			//game is finished
 			g.setFont(new Font("Ink Free", Font.BOLD, 75));
 			FontMetrics metrics = getFontMetrics(g.getFont());
-			g.drawString("Game Over", (SCREEN_WIDTH - metrics.stringWidth("GameOver"))/2, SCREEN_HEIGHT / 2);
+			if (bodyParts == GAME_UNITS) {
+				//win screen
+				g.setColor(Color.green);
+				g.drawString("You won!", SCREEN_WIDTH/2 - metrics.stringWidth("You won!")/2, SCREEN_HEIGHT / 2);
+			}
+			else {
+				//game over screen
+				g.setColor(Color.red);				
+				g.drawString("Game Over", SCREEN_WIDTH/2 - metrics.stringWidth("GameOver")/2, SCREEN_HEIGHT / 2);
+			}
+			//final score
+			g.setFont(new Font("Ink Free", Font.PLAIN, 40));
+			metrics = getFontMetrics(g.getFont());
+			g.drawString("Final Score: " + applesEaten, SCREEN_WIDTH/2 - metrics.stringWidth("Final Score: " + applesEaten)/2, SCREEN_HEIGHT / 2 + g.getFont().getSize());
 		}
 	}
 	/**
@@ -128,6 +147,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	 * Head movement depends on direction, so we check it and only then move head.
 	 */
 	public void move() {
+		if (running == false) return;
 		//if a player cannot turn, i.e. has made a 'sharp turn' (see isSharpTurn() method),
 		//than the direction for this tick was already set in keyPressed method.
 		if (canTurn ) direction = nextDirection; 
@@ -171,6 +191,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	}
 	
 	public void generateApple() {
+		if (bodyParts == GAME_UNITS) return;
 		boolean intersects;
 		do {
 			intersects = false;
@@ -200,30 +221,44 @@ public class GamePanel extends JPanel implements ActionListener{
 		}
 		//head collision with walls
 		//left wall
-		if (x[0] < 0) 	gameOver();
+		if (x[0] < 0) gameOver();
+		
 		
 		//right wall
 		else if (x[0] > SCREEN_WIDTH - UNIT_SIZE) gameOver();
 		
+		
 		//upper wall
 		else if (y[0] < 0) gameOver();
 		
+		
 		//bottom wall
-		else if (y[0] > SCREEN_HEIGHT - UNIT_SIZE) gameOver();
+		else if (y[0] > SCREEN_HEIGHT - UNIT_SIZE) gameOver();			
+		
 	}
 	
 	public void gameOver() {
 		running = false;
+		timer.stop();
 	}
+	
+	public void checkWin() {
+		if (bodyParts == GAME_UNITS) {
+			gameOver();
+		}
+	}
+	
 	@Override 
 	public void actionPerformed(ActionEvent e) {
 		if (running) {
 			checkApple();
+			checkWin();
 			move();
 			checkCollisions();
 		}
 		repaint();
 	}
+	
 	
 	
 	public class MyKeyAdapter extends KeyAdapter {
